@@ -66,14 +66,14 @@ class Coder:
         if not main_model:
             main_model = models.GPT4_32k
 
-        if not main_model.always_available:
-            if not check_model_availability(main_model):
-                if main_model != models.GPT4:
-                    io.tool_error(
-                        f"API key does not support {main_model.name}, falling back to"
-                        f" {models.GPT35_16k.name}"
-                    )
-                main_model = models.GPT4_32k
+        # if not main_model.always_available:
+        #     if not check_model_availability(main_model):
+        #         if main_model != models.GPT4:
+        #             io.tool_error(
+        #                 f"API key does not support {main_model.name}, falling back to"
+        #                 f" {models.GPT35_16k.name}"
+        #             )
+        #         main_model = models.GPT4_32k
 
         if edit_format is None:
             edit_format = main_model.edit_format

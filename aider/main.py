@@ -352,7 +352,7 @@ def main(args=None, input=None, output=None):
             )
         return 1
 
-    main_model = models.Model(args.model)
+    main_model = models.GPT4_32k
 
     openai.api_key = args.openai_api_key
     for attr in ("base", "type", "version", "deployment_id", "engine"):
