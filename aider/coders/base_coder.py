@@ -617,7 +617,7 @@ class Coder:
     )
     def send_with_retries(self, model, messages, functions):
         kwargs = dict(
-            model="gpt-4-32k",
+            model="openai/gpt-4-32k",
             messages=messages,
             temperature=0,
             stream=self.stream,
