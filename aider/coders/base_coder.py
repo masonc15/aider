@@ -621,6 +621,10 @@ class Coder:
             messages=messages,
             temperature=0,
             stream=self.stream,
+            headers={
+                "HTTP-Referer": "https://example.com",
+                "X-Title": "my-app"
+            }
         )
         if functions is not None:
             kwargs["functions"] = self.functions
