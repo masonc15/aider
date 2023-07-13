@@ -60,8 +60,8 @@ def main(args=None, input=None, output=None):
     core_group.add_argument(
         "--model",
         metavar="MODEL",
-        default=models.GPT4.name,
-        help=f"Specify the model to use for the main chat (default: {models.GPT4.name})",
+        default=models.GPT4_32k.name,
+        help=f"Specify the model to use for the main chat (default: {models.GPT4_32k.name})",
     )
     core_group.add_argument(
         "-3",
