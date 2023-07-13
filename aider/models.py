@@ -3,6 +3,7 @@ import re
 known_tokens = {
     "gpt-3.5-turbo": 4,
     "gpt-4": 8,
+    "gpt-4-32k": 32,  # Added this line
 }
 
 
@@ -40,7 +41,7 @@ class Model:
             if tokens == 8:
                 self.prompt_price = 0.03
                 self.completion_price = 0.06
-            elif tokens == 32:
+            elif tokens == 32:  # Added this condition
                 self.prompt_price = 0.06
                 self.completion_price = 0.12
 
@@ -72,5 +73,6 @@ class Model:
 
 
 GPT4 = Model("gpt-4")
+GPT4_32k = Model("gpt-4-32k")  # Added this line
 GPT35 = Model("gpt-3.5-turbo")
 GPT35_16k = Model("gpt-3.5-turbo-16k")
