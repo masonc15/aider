@@ -19,6 +19,54 @@ def get_git_root():
         return None
 
 
+def setup_git(git_root, io):
+    if git_root:
+        return git_root
+
+    if not io.confirm_ask("No git repo found, create one to track GPT's changes (recommended)?"):
+        return
+
+    repo = git.Repo.init(Path.cwd())
+    global_git_config = git.GitConfigParser([str(Path.home() / ".gitconfig")], read_only=True)
+    with repo.config_writer() as git_config:
+        if not global_git_config.has_option("user", "name"):
+            git_config.set_value("user", "name", "Your Name")
+            io.tool_error('Update git name with: git config --global user.name "Your Name"')
+        if not global_git_config.has_option("user", "email"):
+            git_config.set_value("user", "email", "you@example.com")
+            io.tool_error('Update git email with: git config --global user.email "you@example.com"')
+
+    io.tool_output("Git repository created in the current working directory.")
+    git_root = str(Path.cwd().resolve())
+    check_gitignore(git_root, io, False)
+    return git_root
+
+
+def check_gitignore(git_root, io, ask=True):
+    if not git_root:
+        return
+
+    pat = ".aider*"
+
+    gitignore_file = Path(git_root) / ".gitignore"
+    if gitignore_file.exists():
+        content = io.read_text(gitignore_file)
+        if pat in content.splitlines():
+            return
+    else:
+        content = ""
+
+    if ask and not io.confirm_ask(f"Add {pat} to .gitignore (recommended)?"):
+        return
+
+    if content and not content.endswith("\n"):
+        content += "\n"
+    content += pat + "\n"
+    io.write_text(gitignore_file, content)
+
+    io.tool_output(f"Added {pat} to .gitignore")
+
+
 def main(args=None, input=None, output=None):
     if args is None:
         args = sys.argv[1:]
@@ -269,6 +317,12 @@ def main(args=None, input=None, output=None):
         default=False,
     )
     other_group.add_argument(
+        "--show-repo-map",
+        action="store_true",
+        help="Print the repo map and exit (debug)",
+        default=False,
+    )
+    other_group.add_argument(
         "--message",
         "--msg",
         "-m",
@@ -315,29 +369,24 @@ def main(args=None, input=None, output=None):
 
     io.tool_output(f"Aider v{__version__}")
 
-    if not git_root and args.git:
-        if io.confirm_ask("No git repo found, create one to track GPT's changes (recommended)?"):
-            repo = git.Repo.init(os.getcwd())
-            global_git_config = git.GitConfigParser(
-                [str(Path.home() / ".gitconfig")], read_only=True
-            )
-            with repo.config_writer() as git_config:
-                if not global_git_config.has_option("user", "name"):
-                    git_config.set_value("user", "name", "Your Name")
-                    io.tool_error('Update git name with: git config --global user.name "Your Name"')
-                if not global_git_config.has_option("user", "email"):
-                    git_config.set_value("user", "email", "you@example.com")
-                    io.tool_error(
-                        'Update git email with: git config --global user.email "you@example.com"'
-                    )
-            io.tool_output("Git repository created in the current working directory.")
+    if 'VSCODE_GIT_IPC_HANDLE' in os.environ:
+        args.pretty = False
+        io.tool_output("VSCode terminal detected, pretty output has been disabled.")
+
+    if args.git:
+        git_root = setup_git(git_root, io)
+        check_gitignore(git_root, io)
+
+    def scrub_sensitive_info(text):
+        # Replace sensitive information with placeholder
+        return text.replace(args.openai_api_key, "***")
 
     if args.verbose:
-        show = parser.format_values()
+        show = scrub_sensitive_info(parser.format_values())
         io.tool_output(show)
         io.tool_output("Option settings:")
         for arg, val in sorted(vars(args).items()):
-            io.tool_output(f"  - {arg}: {val}")
+            io.tool_output(f"  - {arg}: {scrub_sensitive_info(str(val))}")
 
     io.tool_output(*sys.argv, log_only=True)
 
@@ -381,6 +430,12 @@ def main(args=None, input=None, output=None):
         stream=args.stream,
         use_git=args.git,
     )
+
+    if args.show_repo_map:
+        repo_map = coder.get_repo_map()
+        if repo_map:
+            io.tool_output(repo_map)
+        return
 
     if args.dirty_commits:
         coder.commit(ask=True, which="repo_files")

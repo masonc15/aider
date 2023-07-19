@@ -12,6 +12,7 @@ from aider import models
 from aider.coders import Coder
 from aider.dump import dump  # noqa: F401
 from aider.io import InputOutput
+from tests.utils import GitTemporaryDirectory
 
 
 class TestCoder(unittest.TestCase):
@@ -22,6 +23,26 @@ class TestCoder(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
+
+    def test_should_dirty_commit(self):
+        # Mock the IO object
+        mock_io = MagicMock()
+
+        with GitTemporaryDirectory():
+            repo = git.Repo(Path.cwd())
+            fname = Path("new.txt")
+            fname.touch()
+            repo.git.add(str(fname))
+            repo.git.commit("-m", "new")
+
+            # Initialize the Coder object with the mocked IO and mocked repo
+            coder = Coder.create(models.GPT4, None, mock_io)
+
+            fname.write_text("hi")
+            self.assertTrue(coder.should_dirty_commit("hi"))
+
+            self.assertFalse(coder.should_dirty_commit("/exit"))
+            self.assertFalse(coder.should_dirty_commit("/help"))
 
     def test_check_for_file_mentions(self):
         # Mock the IO object
@@ -95,20 +116,44 @@ class TestCoder(unittest.TestCase):
         self.assertEqual(coder.abs_fnames, expected_files)
 
     def test_check_for_ambiguous_filename_mentions_of_longer_paths(self):
-        # Mock the IO object
-        mock_io = MagicMock()
+        with GitTemporaryDirectory():
+            io = InputOutput(pretty=False, yes=True)
+            coder = Coder.create(models.GPT4, None, io)
 
-        # Initialize the Coder object with the mocked IO and mocked repo
-        coder = Coder.create(models.GPT4, None, mock_io)
+            fname = Path("file1.txt")
+            fname.touch()
 
-        mock = MagicMock()
-        mock.return_value = set(["file1.txt", "other/file1.txt"])
-        coder.get_tracked_files = mock
+            other_fname = Path("other") / "file1.txt"
+            other_fname.parent.mkdir(parents=True, exist_ok=True)
+            other_fname.touch()
 
-        # Call the check_for_file_mentions method
-        coder.check_for_file_mentions("Please check file1.txt!")
+            mock = MagicMock()
+            mock.return_value = set([str(fname), str(other_fname)])
+            coder.get_tracked_files = mock
 
-        self.assertEqual(coder.abs_fnames, set())
+            # Call the check_for_file_mentions method
+            coder.check_for_file_mentions(f"Please check {fname}!")
+
+            self.assertEqual(coder.abs_fnames, set([str(fname.resolve())]))
+
+    def test_check_for_subdir_mention(self):
+        with GitTemporaryDirectory():
+            io = InputOutput(pretty=False, yes=True)
+            coder = Coder.create(models.GPT4, None, io)
+
+            fname = Path("other") / "file1.txt"
+            fname.parent.mkdir(parents=True, exist_ok=True)
+            fname.touch()
+
+            mock = MagicMock()
+            mock.return_value = set([str(fname)])
+            coder.get_tracked_files = mock
+
+            dump(fname)
+            # Call the check_for_file_mentions method
+            coder.check_for_file_mentions(f"Please check `{fname}`")
+
+            self.assertEqual(coder.abs_fnames, set([str(fname.resolve())]))
 
     def test_get_commit_message(self):
         # Mock the IO object

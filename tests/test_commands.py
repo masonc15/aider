@@ -7,11 +7,14 @@ from io import StringIO
 from pathlib import Path
 from unittest import TestCase
 
+import git
+
 from aider import models
 from aider.coders import Coder
 from aider.commands import Commands
 from aider.dump import dump  # noqa: F401
 from aider.io import InputOutput
+from tests.utils import GitTemporaryDirectory
 
 
 class TestCommands(TestCase):
@@ -154,6 +157,27 @@ class TestCommands(TestCase):
         commands.cmd_add("foo.bad")
 
         self.assertEqual(coder.abs_fnames, set())
+
+    def test_cmd_git(self):
+        # Initialize the Commands and InputOutput objects
+        io = InputOutput(pretty=False, yes=True)
+
+        with GitTemporaryDirectory() as tempdir:
+            # Create a file in the temporary directory
+            with open(f"{tempdir}/test.txt", "w") as f:
+                f.write("test")
+
+            coder = Coder.create(models.GPT35, None, io)
+            commands = Commands(io, coder)
+
+            # Run the cmd_git method with the arguments "commit -a -m msg"
+            commands.cmd_git("add test.txt")
+            commands.cmd_git("commit -a -m msg")
+
+            # Check if the file has been committed to the repository
+            repo = git.Repo(tempdir)
+            files_in_repo = repo.git.ls_files()
+            self.assertIn("test.txt", files_in_repo)
 
     def test_cmd_tokens(self):
         # Initialize the Commands and InputOutput objects

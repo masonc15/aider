@@ -1,8 +1,20 @@
 # Release history
 
-### Next release
+### GitHub main branch
+
+- Force `--no-pretty` if aider detects it is running inside a VSCode terminal.
+- Use Meta-ENTER (Esc+ENTER in some environments) to enter multiline chat messages.
+- Create a `.gitignore` with `.aider*` to prevent users from accidentaly adding aider files to git.
+- Added `/git` command to run git from inside aider chats.
+
+### v0.9.0
 
 - Support for the OpenAI models in [Azure](https://aider.chat/docs/faq.html#azure)
+- Added `--show-repo-map`
+- Improved output when retrying connections to the OpenAI API
+- Redacted api key from `--verbose` output
+- Bugfix: recognize and add files in subdirectories mentioned by user or GPT
+- [Benchmarked](https://aider.chat/docs/benchmarks.html) at 53.8% for gpt-3.5-turbo/whole
 
 ### v0.8.3
 

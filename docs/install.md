@@ -1,6 +1,12 @@
 
 # Installing aider
 
+- [pip install aider-chat](#pip-install-aider-chat)
+- [Provide your OpenAI API key](#provide-your-openai-api-key)
+- [Install git](#install-git)
+- [Install universal ctags (optional)](#install-universal-ctags-optional)
+- [Add aider to your editor (optional)](#add-aider-to-your-editor-optional)
+
 ## pip install aider-chat
 
 Install the “aider-chat” package with pip from one of these sources:
@@ -69,21 +75,53 @@ You should consult the
 for official instructions on how to install it in your environment.
 But you may be able to install a compatible version using these commands:
 
-* Mac: `brew install universal-ctags`
+* Mac: `brew update && brew install universal-ctags`
 * Windows: `choco install universal-ctags`
-* Ubuntu: `sudo apt-get install universal-ctags`
+* Ubuntu: `sudo apt update && sudo apt install universal-ctags`
+
+You know aider has found a working ctags if you see this output when you launch aider:
+
+```
+Aider v0.8.3-dev
+Model: gpt-4
+Git repo: .git
+Repo-map: universal-ctags using 1024 tokens <======
+```
 
 Some things to be aware of:
 
 * The `ctags` command needs to be on your shell path so that it will run by default when aider invokes `ctags ...`.
 * You need a build which includes the json feature. You can check by running `ctags --version` and looking for `+json` in the `Optional compiled features` list.
 
+```
+$ ctags --version
+
+Universal Ctags 6.0.0, Copyright (C) 2015-2022 Universal Ctags Team
+Universal Ctags is derived from Exuberant Ctags.
+Exuberant Ctags 5.8, Copyright (C) 1996-2009 Darren Hiebert
+  Compiled: Jun 25 2023, 07:31:18
+  URL: https://ctags.io/
+  Output version: 0.0
+  Optional compiled features: +wildcards, +regex, +gnulib_fnmatch, +gnulib_regex, +iconv, +option-directory, +xpath, +json, +interactive, +yaml, +case-insensitive-filenames, +packcc, +optscript, +pcre2
+```
 
 ## Add aider to your editor (optional)
 
-[joshuavial](https://github.com/joshuavial) has provided a NeoVim plugin for aider:
+[joshuavial](https://github.com/joshuavial) has been working on editor integrations.
 
-* [https://github.com/joshuavial/aider.nvim](https://github.com/joshuavial/aider.nvim)
+### NeoVim
+
+He provided a NeoVim plugin for aider:
+
+[https://github.com/joshuavial/aider.nvim](https://github.com/joshuavial/aider.nvim)
+
+### VS Code
+
+He also confirmed that aider works inside a VS Code terminal window, but
+found that you should
+[run with `--no-pretty` to avoid flickering issues](https://github.com/paul-gauthier/aider/issues/68#issuecomment-1634985231).
+
+### Other editors
 
 If you are interested in creating an aider plugin for your favorite editor,
 please let me know by opening a

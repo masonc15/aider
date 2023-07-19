@@ -1,10 +1,11 @@
 import os
-import tempfile
 import unittest
 from unittest.mock import patch
 
 from aider.io import InputOutput
 from aider.repomap import RepoMap
+
+from tests.utils import IgnorantTemporaryDirectory
 
 
 class TestRepoMap(unittest.TestCase):
@@ -17,7 +18,7 @@ class TestRepoMap(unittest.TestCase):
             "test_file4.json",
         ]
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with IgnorantTemporaryDirectory() as temp_dir:
             for file in test_files:
                 with open(os.path.join(temp_dir, file), "w") as f:
                     f.write("")
@@ -32,6 +33,9 @@ class TestRepoMap(unittest.TestCase):
             self.assertIn("test_file2.py", result)
             self.assertIn("test_file3.md", result)
             self.assertIn("test_file4.json", result)
+
+            # close the open cache files, so Windows won't error
+            del repo_map
 
     def test_get_repo_map_with_identifiers(self):
         # Create a temporary directory with a sample Python file containing identifiers
@@ -57,7 +61,7 @@ print(my_function(3, 4))
         test_file3 = "test_file_pass.py"
         file_content3 = "pass"
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with IgnorantTemporaryDirectory() as temp_dir:
             with open(os.path.join(temp_dir, test_file1), "w") as f:
                 f.write(file_content1)
 
@@ -82,6 +86,9 @@ print(my_function(3, 4))
             self.assertIn("my_method", result)
             self.assertIn("my_function", result)
             self.assertIn("test_file_pass.py", result)
+
+            # close the open cache files, so Windows won't error
+            del repo_map
 
     def test_check_for_ctags_failure(self):
         with patch("subprocess.run") as mock_run:
@@ -118,7 +125,7 @@ print(my_function(3, 4))
             "test_file6.js",
         ]
 
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with IgnorantTemporaryDirectory() as temp_dir:
             for file in test_files:
                 with open(os.path.join(temp_dir, file), "w") as f:
                     f.write("")
@@ -132,6 +139,9 @@ print(my_function(3, 4))
             # Check if the result contains each specific file in the expected tags map without ctags
             for file in test_files:
                 self.assertIn(file, result)
+
+            # close the open cache files, so Windows won't error
+            del repo_map
 
 
 if __name__ == "__main__":
