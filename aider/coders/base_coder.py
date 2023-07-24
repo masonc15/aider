@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import sys
+import time
 import traceback
 from json.decoder import JSONDecodeError
 from pathlib import Path, PurePosixPath
@@ -46,6 +47,7 @@ class Coder:
     functions = None
     total_cost = 0.0
     num_exhausted_context_windows = 0
+    last_keyboard_interrupt = None
 
     @classmethod
     def create(
@@ -120,7 +122,6 @@ class Coder:
         self.abs_fnames = set()
         self.cur_messages = []
         self.done_messages = []
-        self.num_control_c = 0
 
         self.io = io
         self.stream = stream
@@ -395,12 +396,21 @@ class Coder:
                     return
 
             except KeyboardInterrupt:
-                self.num_control_c += 1
-                if self.num_control_c >= 2:
-                    break
-                self.io.tool_error("^C again or /exit to quit")
+                self.keyboard_interrupt()
             except EOFError:
                 return
+
+    def keyboard_interrupt(self):
+        now = time.time()
+
+        thresh = 2  # seconds
+        if self.last_keyboard_interrupt and now - self.last_keyboard_interrupt < thresh:
+            self.io.tool_error("\n\n^C KeyboardInterrupt")
+            sys.exit()
+
+        self.io.tool_error("\n\n^C again to exit")
+
+        self.last_keyboard_interrupt = now
 
     def should_dirty_commit(self, inp):
         cmds = self.commands.matching_commands(inp)
@@ -437,8 +447,6 @@ class Coder:
             self.get_addable_relative_files(),
             self.commands,
         )
-
-        self.num_control_c = 0
 
         if self.should_dirty_commit(inp):
             self.io.tool_output("Git repo has uncommitted changes, preparing commit...")
@@ -521,8 +529,6 @@ class Coder:
             content = ""
 
         if interrupted:
-            self.io.tool_error("\n\n^C KeyboardInterrupt")
-            self.num_control_c += 1
             content += "\n^C KeyboardInterrupt"
 
         self.io.tool_output()
@@ -532,10 +538,10 @@ class Coder:
 
         edited, edit_error = self.apply_updates()
         if edit_error:
+            self.update_cur_messages(set())
             return edit_error
 
-        # TODO: this shouldn't use content, should use self.partial_....
-        self.update_cur_messages(content, edited)
+        self.update_cur_messages(edited)
 
         if edited:
             if self.repo and self.auto_commits and not self.dry_run:
@@ -551,8 +557,17 @@ class Coder:
         if add_rel_files_message:
             return add_rel_files_message
 
-    def update_cur_messages(self, content, edited):
-        self.cur_messages += [dict(role="assistant", content=content)]
+    def update_cur_messages(self, edited):
+        if self.partial_response_content:
+            self.cur_messages += [dict(role="assistant", content=self.partial_response_content)]
+        if self.partial_response_function_call:
+            self.cur_messages += [
+                dict(
+                    role="assistant",
+                    content=None,
+                    function_call=self.partial_response_function_call,
+                )
+            ]
 
     def auto_commit(self):
         res = self.commit(history=self.cur_messages, prefix="aider: ")
@@ -668,6 +683,7 @@ class Coder:
             else:
                 self.show_send_output(completion, silent)
         except KeyboardInterrupt:
+            self.keyboard_interrupt()
             interrupted = True
 
         if not silent:
@@ -945,10 +961,10 @@ class Coder:
         return files
 
     def get_last_modified(self):
-        files = self.get_all_abs_files()
+        files = [Path(fn) for fn in self.get_all_abs_files() if Path(fn).exists()]
         if not files:
             return 0
-        return max(Path(path).stat().st_mtime for path in files)
+        return max(path.stat().st_mtime for path in files)
 
     def get_addable_relative_files(self):
         return set(self.get_all_relative_files()) - set(self.get_inchat_relative_files())
@@ -995,12 +1011,19 @@ class Coder:
         try:
             commit = self.repo.head.commit
         except ValueError:
-            return set()
+            commit = None
 
         files = []
-        for blob in commit.tree.traverse():
-            if blob.type == "blob":  # blob is a file
-                files.append(blob.path)
+        if commit:
+            for blob in commit.tree.traverse():
+                if blob.type == "blob":  # blob is a file
+                    files.append(blob.path)
+
+        # Add staged files
+        index = self.repo.index
+        staged_files = [path for path, _ in index.entries.keys()]
+
+        files.extend(staged_files)
 
         # convert to appropriate os.sep, since git always normalizes to /
         res = set(str(Path(PurePosixPath(path))) for path in files)
@@ -1010,7 +1033,7 @@ class Coder:
     apply_update_errors = 0
 
     def apply_updates(self):
-        max_apply_update_errors = 2
+        max_apply_update_errors = 3
 
         try:
             edited = self.update_files()

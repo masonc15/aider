@@ -26,9 +26,16 @@ Aider makes it easy to
 proposed by GPT without copy/pasting.
 It also has features that [help GPT-4 understand and modify larger codebases](https://aider.chat/docs/ctags.html).
 
-![aider screencast](assets/screencast.svg)
+<p align="center">
+  <img src="assets/screencast.svg" alt="aider screencast">
+</p>
 
-- [Discord](https://discord.gg/SqzfE6bw)
+<p align="center">
+  <a href="https://discord.gg/SqzfE6bw">
+    <img src="https://img.shields.io/badge/Join-Discord-blue.svg"/>
+  </a>
+</p>
+
 - [Getting started](#getting-started)
 - [Example chat transcripts](#example-chat-transcripts)
 - [Features](#features)
@@ -115,6 +122,7 @@ Aider also has many
 additional command-line options, environment variables or configuration file
 to set many options. See `aider --help` for details.
 
+
 ## In-chat commands
 
 Aider supports commands from within the chat, which all start with `/`. Here are some of the most useful in-chat commands:
@@ -125,6 +133,8 @@ Aider supports commands from within the chat, which all start with `/`. Here are
 * `/diff`: Display the diff of the last aider commit.
 * `/run <command>`: Run a shell command and optionally add the output to the chat.
 * `/help`: Show help about all commands.
+
+See the [full command docs](https://aider.chat/docs/commands.html) for more information.
 
 
 ## Tips
@@ -166,6 +176,7 @@ For more information, see the [FAQ](https://aider.chat/docs/faq.html).
 * *The best AI coding assistant so far.* -- [Matthew Berman](https://www.youtube.com/watch?v=df8afeb1FY8)
 * *Hands down, this is the best AI coding assistant tool so far.* -- [IndyDevDan](https://www.youtube.com/watch?v=MPYFPvxfGZs)
 * *Aider ... has easily quadrupled my coding productivity.* -- [SOLAR_FIELDS](https://news.ycombinator.com/item?id=36212100)
+* *It's really like having your senior developer live right in your Git repo - truly amazing!* -- [rappster](https://github.com/paul-gauthier/aider/issues/124)
 * *What an amazing tool. It's incredible.* -- [valyagolev](https://github.com/paul-gauthier/aider/issues/6#issue-1722897858)
 * *Aider is such an astounding thing!* -- [cgrothaus](https://github.com/paul-gauthier/aider/issues/82#issuecomment-1631876700)
 * *It was WAY faster than I would be getting off the ground and making the first few working versions.* -- [Daniel Feldman](https://twitter.com/d_feldman/status/1662295077387923456)
